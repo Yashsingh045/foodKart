@@ -71,6 +71,9 @@ const Home = () => {
   const searchInputRef = useRef(null);
   const sortDropdownRef = useRef(null);
   
+  // Add new state for search bar focus
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  
   // Function to scroll to top of page
   const scrollToTop = () => {
     window.scrollTo({
@@ -386,6 +389,7 @@ const Home = () => {
     searchParams.delete('cuisine');
     searchParams.delete('sort');
     setSearchParams(searchParams);
+    setIsSearching(false);
     
     // Focus on search input after clearing
     if (searchInputRef.current) {
@@ -414,6 +418,23 @@ const Home = () => {
   // Count total matched menu items
   const getTotalMenuItemMatches = () => {
     return allMatchedDishes.length;
+  };
+
+  // Handle search bar focus
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
+    if (searchTerm) {
+      setIsSearching(true);
+    }
+    scrollToTop();
+  };
+
+  // Handle search bar blur
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
+    if (!searchTerm) {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -451,7 +472,11 @@ const Home = () => {
               </p>
               
               <div className="mt-12 animate-fadeIn delay-300">
-                <div className="bg-white rounded-lg shadow-xl flex items-center p-3 max-w-xl overflow-hidden">
+                <div 
+                  className={`bg-white rounded-lg shadow-xl flex items-center p-3 max-w-xl overflow-hidden transition-all duration-300 ${
+                    isSearchFocused ? 'ring-2 ring-emerald-500 scale-105' : ''
+                  }`}
+                >
                   <MagnifyingGlassIcon className="h-6 w-6 text-gray-400 ml-3" />
                   <input
                     ref={searchInputRef}
@@ -460,6 +485,8 @@ const Home = () => {
                     className="flex-1 py-3 px-4 outline-none text-gray-800 font-medium"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={handleSearchFocus}
+                    onBlur={handleSearchBlur}
                   />
                   {searchTerm && (
                     <button 
@@ -474,7 +501,11 @@ const Home = () => {
             </div>
           ) : (
             <div className="animate-fadeIn">
-              <div className="bg-white rounded-lg shadow-xl flex items-center p-3 max-w-xl overflow-hidden">
+              <div 
+                className={`bg-white rounded-lg shadow-xl flex items-center p-3 max-w-xl overflow-hidden transition-all duration-300 ${
+                  isSearchFocused ? 'ring-2 ring-emerald-500 scale-105' : ''
+                }`}
+              >
                 <MagnifyingGlassIcon className="h-6 w-6 text-gray-400 ml-3" />
                 <input
                   ref={searchInputRef}
@@ -483,6 +514,9 @@ const Home = () => {
                   className="flex-1 py-3 px-4 outline-none text-gray-800 font-medium"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={handleSearchFocus}
+                  onBlur={handleSearchBlur}
+                  autoFocus
                 />
                 {searchTerm && (
                   <button 
@@ -508,87 +542,111 @@ const Home = () => {
       
       {/* Search Results section with enhanced styling */}
       {isSearching && (
-        <div className="container pt-8 px-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-md p-6 mb-8 border-b-4 border-emerald-500">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-              <div className="flex items-center">
-                <div className="bg-emerald-100 p-2 rounded-full mr-3">
-                  <MagnifyingGlassIcon className="h-6 w-6 text-emerald-600" />
-                </div>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-800">
-                  Search Results {searchTerm && <span>for "{searchTerm}"</span>}
-                </h2>
-              </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div className="flex items-center gap-4 mb-4 md:mb-0 relative">
+              <button
+                onClick={() => setShowSortDropdown(!showSortDropdown)}
+                className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 hover:border-emerald-500 transition-colors"
+              >
+                <ArrowsUpDownIcon className="h-5 w-5 text-gray-500" />
+                <span className="text-gray-700">{getSortOptionDisplayText()}</span>
+                <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+              </button>
               
-              {/* Sort by options */}
-              <div className="mt-4 sm:mt-0 relative">
-                <div className="flex items-center">
-                  <span className="text-gray-500 mr-2 text-sm">Sort by:</span>
-                  <div className="relative" ref={sortDropdownRef}>
-                    <button 
-                      className="flex items-center bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm"
-                      onClick={() => setShowSortDropdown(!showSortDropdown)}
-                    >
-                      {getSortOptionDisplayText()}
-                      <ChevronDownIcon className="ml-2 h-4 w-4" />
-                    </button>
-                    
-                    {/* Sort Options Dropdown */}
-                    {showSortDropdown && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
-                        <div className="py-1">
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'relevance' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('relevance')}
-                          >
-                            <ArrowsUpDownIcon className="h-4 w-4 mr-2" />
-                            Relevance
-                          </button>
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'rating' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('rating')}
-                          >
-                            <StarIcon className="h-4 w-4 mr-2" />
-                            Highest Rating
-                          </button>
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'delivery_time' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('delivery_time')}
-                          >
-                            <ClockIcon className="h-4 w-4 mr-2" />
-                            Fastest Delivery
-                          </button>
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'price_low' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('price_low')}
-                          >
-                            <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-                            Price: Low to High
-                          </button>
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'price_high' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('price_high')}
-                          >
-                            <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-                            Price: High to Low
-                          </button>
-                          <button
-                            className={`flex items-center px-4 py-2 w-full text-left text-sm ${sortBy === 'popular_items' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                            onClick={() => handleSortChange('popular_items')}
-                          >
-                            <FireIcon className="h-4 w-4 mr-2" />
-                            Most Popular Items
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              {showSortDropdown && (
+                <div 
+                  ref={sortDropdownRef}
+                  className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 min-w-[200px]"
+                >
+                  <button
+                    onClick={() => handleSortChange('relevance')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'relevance' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Relevance
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('rating')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'rating' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Highest Rating
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('delivery_time')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'delivery_time' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Fastest Delivery
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('price_low')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'price_low' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Price: Low to High
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('price_high')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'price_high' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Price: High to Low
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('popular_items')}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${
+                      sortBy === 'popular_items' ? 'text-emerald-600 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    Most Popular Items
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
             
-            {/* Cuisine filters - Enhanced styling */}
-            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Show active sort if not default */}
+              {sortBy !== 'relevance' && (
+                <div className="flex items-center bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-sm">
+                  <span>Sort: {getSortOptionDisplayText()}</span>
+                  <button 
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => handleSortChange('relevance')}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              
+              {/* Results count */}
+              <div className="text-sm text-gray-500">
+                {allMatchedDishes.length > 0 ? (
+                  <>
+                    {allMatchedDishes.length} {allMatchedDishes.length === 1 ? 'dish' : 'dishes'} found
+                    {selectedCuisine !== 'all' && <span> in {selectedCuisine}</span>}
+                    {searchTerm && <span> matching "{searchTerm}"</span>}
+                  </>
+                ) : (
+                  <>
+                    {filteredRestaurants.length} {filteredRestaurants.length === 1 ? 'restaurant' : 'restaurants'} found
+                    {selectedCuisine !== 'all' && <span> in {selectedCuisine}</span>}
+                    {searchTerm && <span> matching "{searchTerm}"</span>}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cuisine Filters */}
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
               {cuisineTypes.map((cuisine, index) => {
                 // Assign cuisine-specific icons based on cuisine type
                 let cuisineIcon;
@@ -633,74 +691,26 @@ const Home = () => {
                 );
               })}
             </div>
-            
-            {/* Active filters and sort */}
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              {/* Show active sort if not default */}
-              {sortBy !== 'relevance' && (
-                <div className="flex items-center bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-sm">
-                  <span>Sort: {getSortOptionDisplayText()}</span>
-                  <button 
-                    className="ml-2 text-gray-500 hover:text-gray-700"
-                    onClick={() => handleSortChange('relevance')}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-              
-              {/* Results count */}
-              <div className="text-sm text-gray-500 ml-auto">
-                {allMatchedDishes.length > 0 ? (
-                  <>
-                    {allMatchedDishes.length} {allMatchedDishes.length === 1 ? 'dish' : 'dishes'} found
-                    {selectedCuisine !== 'all' && <span> in {selectedCuisine}</span>}
-                    {searchTerm && <span> matching "{searchTerm}"</span>}
-                  </>
-                ) : (
-                  <>
-                    {filteredRestaurants.length} {filteredRestaurants.length === 1 ? 'restaurant' : 'restaurants'} found
-                    {selectedCuisine !== 'all' && <span> in {selectedCuisine}</span>}
-                    {searchTerm && <span> matching "{searchTerm}"</span>}
-                  </>
-                )}
-              </div>
-            </div>
           </div>
           
           {/* Dish-centric Search Results */}
           {allMatchedDishes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {allMatchedDishes.map((dish, index) => (
                 <Link 
-                  key={dish.id} 
-                  to={`/restaurants/${dish.restaurantId}?highlight=${dish.id}`}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all border border-gray-100 transform hover:-translate-y-1 animate-fadeIn"
+                  key={`${dish.id}-${index}`}
+                  to={`/restaurant/${dish.restaurantId}?itemId=${dish.id}`}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow animate-fadeIn"
                   style={{ animationDelay: `${index * 0.05}s` }}
-                  onClick={scrollToTop}
                 >
                   <div className="flex">
-                    {/* Dish image on the left */}
-                    <div className="w-1/3 h-32 bg-gray-200 relative">
-                      {dish.image ? (
-                        <img 
-                          src={dish.image} 
-                          alt={dish.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400">
-                          <span>No image</span>
-                        </div>
-                      )}
-                      {dish.popular && (
-                        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
-                          Popular
-                        </div>
-                      )}
+                    <div className="w-1/3 h-32">
+                      <img 
+                        src={dish.image} 
+                        alt={dish.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    
-                    {/* Dish details on the right */}
                     <div className="w-2/3 p-4">
                       <h3 className="font-bold text-gray-800">{dish.name}</h3>
                       <p className="text-sm text-gray-500 line-clamp-1 mt-1">{dish.description || dish.category}</p>
@@ -731,33 +741,10 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-lg shadow-sm mb-12 animate-fadeIn">
-              <img 
-                src="https://illustrations.popsy.co/amber/not-found.svg" 
-                alt="No results" 
-                className="w-64 h-64 mx-auto"
-              />
-              <p className="text-xl text-gray-600 mt-6">
-                No results found matching your search.
-              </p>
-              <button 
-                onClick={clearSearch}
-                className="mt-4 text-emerald-600 font-medium hover:text-emerald-700"
-              >
-                Clear all filters
-              </button>
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No restaurants or food items found. Try another search.</p>
             </div>
           )}
-          
-          {/* Back to home button */}
-          <div className="text-center mb-16">
-            <button
-              onClick={clearSearch}
-              className="inline-flex items-center px-6 py-3 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium transition-colors shadow-sm"
-            >
-              Back to Home
-            </button>
-          </div>
         </div>
       )}
       
